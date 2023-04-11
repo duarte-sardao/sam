@@ -1,8 +1,0 @@
-import cv2
-
-def import_foreground(img1):
-    foreground = cv2.imread(img1)
-    b, g, r = cv2.split(foreground)
-    blueness = b.astype(np.float64) - np.maximum(r.astype(np.float64), g.astype(np.float64))
-    redness = r.astype(np.float64) - np.maximum(b.astype(np.float64), g.astype(np.float64))
-    greenness = g.astype(np.float64) - np.maximum(r.astype(np.float64), b.astype(np.float64))
