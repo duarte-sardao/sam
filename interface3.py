@@ -5,9 +5,8 @@ from chroma import import_foreground, import_background, set_thres, set_channel,
 working_directory = os.getcwd()
 
 def update_img_preview():
-    bytes = cutout_show()
-    if bytes != None:
-        window['preview_image'].update(data=bytes)
+    bytes = cutout_show().tobytes()
+    window['preview_image'].update(data=bytes)
 
 def background_layout():
     return  [[sg.Text("Choose a background file:")],
@@ -26,29 +25,8 @@ def chroma_options_layout():
     ])
 ]]
 
-layout = [[  sg.Column(
-            [[sg.Text("Choose a foreground file:")],
-            [sg.InputText(key="-FILE_PATH_FG-"), 
-            sg.FileBrowse(initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")]),
-            sg.Button('OK', key="Submit_FG")
-            ],
-            [sg.Text("Choose a background file:")],
-            [sg.InputText(key="-FILE_PATH_BG-"), 
-            sg.FileBrowse(initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")]),
-            sg.Button('OK', key="Submit_BG")
-            ],
-            [sg.Column([
-            [sg.Text("Channel")],
-            [sg.Radio('R', "RADIOCHANNEL", key="RADIOCHANNEL", default=True, enable_events=True)],
-            [sg.Radio('G', "RADIOCHANNEL", key="RADIOCHANNEL", default=False, enable_events=True)],
-            [sg.Radio('B', "RADIOCHANNEL", key="RADIOCHANNEL", default=False, enable_events=True)],
-            ]),
-            sg.Column([[sg.Text("Threshold")],[sg.Slider((0,256), 128, 1, orientation='horizontal', key="THR_SLIDER", enable_events = True)]], vertical_alignment='t')
-            ],
-            [sg.Image(key='preview_image',size=(450,250))],
-            ],
-            key="CHROMA"),
-        ]]
+layout = [
+            [sg.Image(filename='', key='image')]]
 
 window = sg.Window("Multimedia App", layout)
 

@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 
 channels = 0
-background = 0
-foreground = 0
+background = []
+foreground = []
 result = 0
 threshold = 0
 channel = 0
@@ -31,7 +31,7 @@ def import_background(img):
     global background
     global foreground
     background = cv2.imread(img)
-    background = cv2.resize(background, (foreground.shape[1], foreground.shape[0]))
+    #background = cv2.resize(background, (foreground.shape[1], foreground.shape[0]))
     
 def cutout_show():
     global result
@@ -39,15 +39,18 @@ def cutout_show():
     global foreground
     global channel
     global channels
-    result = background
+    if len(background) == 0 or len(foreground) == 0:
+        return
+    result = cv2.resize(background, (foreground.shape[1], foreground.shape[0]))
     
     for x, line in enumerate(foreground):
         for y, pixel in enumerate(line):
             if channels[channel][x][y] < threshold:
                 result[x][y] = pixel
                 
-    result = cv2.cvtColor(result, cv2.COLOR_BGR2HSV) 
-    cv2.imshow("Mix", result)
+    return cv2.imencode('.png', cv2.resize(result,(450,250)))[1].tobytes()
+    #cv2.imshow("Base", foreground)
+    #cv2.imshow("Back", background)
     
 def export(path):
     cv2.imwrite(path, result)
