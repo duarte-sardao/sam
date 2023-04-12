@@ -1,6 +1,6 @@
 import PySimpleGUI as sg
 import os
-from chroma import import_foreground, import_background, set_thres, set_channel, cutout_show
+from chroma import import_foreground, import_background, set_thres, set_channel, cutout_show, export
 
 working_directory = os.getcwd()
 
@@ -8,6 +8,7 @@ def update_img_preview():
     bytes = cutout_show()
     if bytes != None:
         window['preview_image'].update(data=bytes)
+        window['EXPORT'].update(disabled=False)
 
 def background_layout():
     return  [[sg.Text("Choose a background file:")],
@@ -42,7 +43,8 @@ layout = [[  sg.Column(
             [sg.Radio('B', "RADIOCHANNEL", key="RADIOCHANNEL", default=False, enable_events=True)],
             ]),
             sg.Column([[sg.Text("Threshold")],[sg.Slider((0,256), 128, 1, orientation='horizontal', key="THR_SLIDER", enable_events = True)]], vertical_alignment='t'),
-            sg.FileSaveAs(initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")], key = "EXPORT", enable_events = True)
+            sg.InputText(key="IMAGE_SAVE", do_not_clear=False, visible=False, enable_events=True), 
+            sg.FileSaveAs("Export",initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")], key = "EXPORT", enable_events = True, disabled=True)
             ],
             [sg.Image(key='preview_image',size=(450,250))],
             ],
@@ -52,7 +54,7 @@ layout = [[  sg.Column(
 window = sg.Window("Multimedia App", layout)
 
 while True:
-    event, values = window.read(timeout=20)
+    event, values = window.read()
     print(event)
     if event in (sg.WIN_CLOSED, 'Exit'):
         break
@@ -78,5 +80,7 @@ while True:
     elif event == "THR_SLIDER":
         set_thres(values["THR_SLIDER"])
         update_img_preview()
+    elif event == "IMAGE_SAVE":
+        export(values["IMAGE_SAVE"])
 
 window.close()
