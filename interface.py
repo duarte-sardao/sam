@@ -28,14 +28,12 @@ def chroma_options_layout():
 
 layout = [[  sg.Column(
             [[sg.Text("Choose a foreground file:")],
-            [sg.InputText(key="-FILE_PATH_FG-"), 
-            sg.FileBrowse(initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")]),
-            sg.Button('OK', key="Submit_FG")
+            [sg.InputText(key="-FILE_PATH_FG-", enable_events=True), 
+            sg.FileBrowse(initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")])
             ],
             [sg.Text("Choose a background file:")],
-            [sg.InputText(key="-FILE_PATH_BG-"), 
-            sg.FileBrowse(initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")]),
-            sg.Button('OK', key="Submit_BG")
+            [sg.InputText(key="-FILE_PATH_BG-", enable_events=True), 
+            sg.FileBrowse(initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")])
             ],
             [sg.Column([
             [sg.Text("Channel")],
@@ -43,7 +41,8 @@ layout = [[  sg.Column(
             [sg.Radio('G', "RADIOCHANNEL", key="RADIOCHANNEL", default=False, enable_events=True)],
             [sg.Radio('B', "RADIOCHANNEL", key="RADIOCHANNEL", default=False, enable_events=True)],
             ]),
-            sg.Column([[sg.Text("Threshold")],[sg.Slider((0,256), 128, 1, orientation='horizontal', key="THR_SLIDER", enable_events = True)]], vertical_alignment='t')
+            sg.Column([[sg.Text("Threshold")],[sg.Slider((0,256), 128, 1, orientation='horizontal', key="THR_SLIDER", enable_events = True)]], vertical_alignment='t'),
+            sg.FileSaveAs(initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")], key = "EXPORT", enable_events = True)
             ],
             [sg.Image(key='preview_image',size=(450,250))],
             ],
@@ -54,15 +53,15 @@ window = sg.Window("Multimedia App", layout)
 
 while True:
     event, values = window.read(timeout=20)
-    #print(event)
+    print(event)
     if event in (sg.WIN_CLOSED, 'Exit'):
         break
-    elif event == "Submit_FG":
+    elif event == "-FILE_PATH_FG-":
         fg_address = values["-FILE_PATH_FG-"]
         import_foreground(fg_address)
         update_img_preview()
         #window.extend_layout(window['CHROMA'], background_layout())
-    elif event == "Submit_BG":
+    elif event == "-FILE_PATH_BG-":
         bg_address = values["-FILE_PATH_BG-"]
         import_background(bg_address)
         update_img_preview()
