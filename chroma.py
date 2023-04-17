@@ -55,7 +55,8 @@ def cutout_show():
             if channels[channel][x][y] < threshold:
                 result[x][y] = pixel
                 
-    return cv2.imencode('.png', cv2.resize(result,(450,250)))[1].tobytes()
+    #return cv2.imencode('.png', cv2.resize(result,(450,250)))[1].tobytes()
+    return cv2.imencode('.png', result)[1].tobytes()
     #cv2.imshow("Base", foreground)
     #cv2.imshow("Back", background)
     

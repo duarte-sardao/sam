@@ -1,6 +1,8 @@
 import PySimpleGUI as sg
 import os
 from chroma import import_foreground, import_background, set_thres, set_channel, cutout_show, export
+from pygame import mixer, time
+import pygame
 
 working_directory = os.getcwd()
 
@@ -27,7 +29,7 @@ def chroma_options_layout():
     ])
 ]]
 
-layout = [[  sg.Column(
+tab1 = [[  sg.Column(
             [[sg.Text("Choose a foreground file:")],
             [sg.InputText(key="-FILE_PATH_FG-", enable_events=True), 
             sg.FileBrowse(initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")])
@@ -46,16 +48,48 @@ layout = [[  sg.Column(
             sg.InputText(key="IMAGE_SAVE", do_not_clear=False, visible=False, enable_events=True), 
             sg.FileSaveAs("Export",initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")], key = "EXPORT", enable_events = True, disabled=True)
             ],
-            [sg.Image(key='preview_image',size=(450,250))],
             ],
             key="CHROMA"),
+            sg.Image(key='preview_image',size=(600,450)),
         ]]
+
+tab2 = [
+    [sg.Text("Choose a file: ", size=(12,1)), sg.Input(), sg.FileBrowse(key="MUSIC_PATH")],
+    [sg.Text("Start: ", size=(12, 1)), sg.Input()],
+    [sg.Text("End: ", size=(12, 1)), sg.Input()],
+    [
+    sg.vbottom(sg.Text("Speed")),
+    sg.Slider((0.1,5), 1, 0.1, orientation='horizontal', key="SPEED_SLIDER", enable_events = True),
+    sg.vbottom(sg.Checkbox("Keep pitch", False))
+    ],
+    [sg.Text("Length (loops): ", size=(12, 1)), sg.Input()],
+    [sg.Text(size=(12,1), key='MUSIC_STATUS')],
+    [
+        sg.Button('Play', pad=(10, 0), key='MUSIC_PLAY', disabled=True),
+        sg.Button('Stop', pad=(10, 0), key='MUSIC_STOP',disabled=True),
+        sg.Button('Export', pad=(10, 0), key='MUSIC_EXPORT',disabled=True)
+    ]
+]
+
+layout = [[sg.TabGroup([
+   [sg.Tab('Chroma Key', tab1),
+   sg.Tab('Audio Edit', tab2)]])],
+]
 
 window = sg.Window("Multimedia App", layout)
 
+mixer.init()
+is_playing = False
+
+current_position = 0
+
 while True:
     event, values = window.read()
+
     print(event)
+
+
+
     if event in (sg.WIN_CLOSED, 'Exit'):
         break
     elif event == "-FILE_PATH_FG-":
