@@ -12,6 +12,27 @@ is_playing = False
 mix_sound = 0
 sound_series = []
 sr = 0
+start_crop = -1
+end_crop = -1
+max_seconds = 0
+
+def set_limit(seconds, isend):
+    global start_crop
+    global end_crop
+    global updated
+    global max_seconds
+    #print(seconds)
+    #print(max_seconds)
+    if seconds != -1 and seconds > max_seconds:
+        return "Must be less than music length"
+    if isend:
+        if seconds != -1 and seconds <= start_crop:
+            return "Must be more than start"
+        end_crop = seconds
+    else:
+        start_crop = seconds
+    updated = False
+    return ""
 
 
 def setup_mixer():
@@ -32,13 +53,34 @@ def set_speed(val):
 def load_audio(path):
     global sound_series
     global sr
+    global updated
+    global max_seconds
     try:
         sound_series, sr = librosa.load(path)
+        max_seconds = librosa.get_duration(y=sound_series, sr=sr)
+        updated = False
     except:
-        return True
+        return False
 
     #print(sound_series)
-    return False
+    return True
+
+def crop_audio(series, sr):
+    #print(start_crop)
+    #print(end_crop)
+    cut_at_start = 0
+    if start_crop != -1:
+        cut_at_start = sr * start_crop
+    cut_at_end = len(series)
+    if end_crop != -1:
+        cut_at_end = sr*end_crop
+    #print(cut_at_start)
+    #print(cut_at_end)
+    #print(len(series))
+
+    return series[cut_at_start : cut_at_end]
+
+
     
 
 def update_audio():
@@ -46,9 +88,11 @@ def update_audio():
 
     mod_series = sound_series
     mod_sr = sr
+
+    mod_series = crop_audio(mod_series, mod_sr)
     
     if pitch_kept:
-        mod_series = librosa.effects.time_stretch(sound_series, rate=speed)
+        mod_series = librosa.effects.time_stretch(mod_series, rate=speed)
     else:
         mod_sr = int(sr*speed)
 
@@ -90,4 +134,7 @@ def unload():
 
 def cleanup_audio():
     unload()
-    os.remove("temp.wav")
+    try:
+        os.remove("temp.wav")
+    except:
+        return

@@ -1,9 +1,13 @@
 import PySimpleGUI as sg
 import os
 from chroma import import_foreground, import_background, set_thres, set_channel, cutout_show, export
-from audio import setup_mixer, set_pitch, set_speed, play_audio, stop_audio, export_audio, load_audio, cleanup_audio
+from audio import setup_mixer, set_pitch, set_speed, play_audio, stop_audio, export_audio, load_audio, cleanup_audio, set_limit
 
 working_directory = os.getcwd()
+
+valid_audio = False
+valid_start = True
+valid_end = True
 
 def update_img_preview():
     bytes = cutout_show()
@@ -11,10 +15,51 @@ def update_img_preview():
         window['preview_image'].update(data=bytes)
         window['EXPORT'].update(disabled=False)
 
-def enable_play(val):
-    window["MUSIC_PLAY"].update(disabled=val)
-    window["MUSIC_PAUSE"].update(disabled=val)
-    window["MUSIC_EXPORT"].update(disabled=val)
+def enable_play():
+    global valid_audio, valid_start, valid_end
+    isvalid = valid_audio and valid_start and valid_end
+    window["MUSIC_PLAY"].update(disabled=not isvalid)
+    window["MUSIC_EXPORT"].update(disabled=not isvalid)
+
+def cuts_info(end, msg):
+    global valid_start
+    global valid_end
+    if end:
+        valid_end = msg == ""
+        window['CROP_END_WARN'].update(msg)
+    else:
+        valid_start = msg == ""
+        window['CROP_START_WARN'].update(msg)
+    enable_play()
+    
+
+def calc_seconds(str, end):
+    format_msg = "Invalid format: Must be hh:mm:ss, mm:ss, ss"
+    if str == "":
+        set_limit(-1, end)
+        cuts_info(end, "")
+        return
+    str = str.split(":")
+    if len(str) > 3:
+        cuts_info(end, format_msg)
+        return
+    str = str[::-1]
+    acc = 1
+    secs = 0
+    for elem in str:
+        try:
+            elem = int(elem)
+        except ValueError:
+            cuts_info(end, format_msg)
+            return
+        if (acc != 3600 and elem > 60) or elem < 0:
+            cuts_info(end, format_msg)
+            return
+        secs += elem*acc
+        acc *= 60
+    message = set_limit(secs, end)
+    cuts_info(end, message)
+
 
 def background_layout():
     return  [[sg.Text("Choose a background file:")],
@@ -60,8 +105,10 @@ tab1 = [[  sg.Column(
 tab2 = [
     [sg.Text("Choose a file: ", size=(12,1)), sg.Input(key="MUSIC_PATH", enable_events=True),
      sg.FileBrowse(initial_folder=working_directory, file_types=[("Audio Files", "*.mp3 *.wav")])],
-    [sg.Text("Start: ", size=(12, 1)), sg.Input()],
-    [sg.Text("End: ", size=(12, 1)), sg.Input()],
+    [sg.Text("Start: ", size=(12, 1)), sg.Input(key="MUSIC_CROP_START", enable_events=True),
+     sg.Text("", key='CROP_START_WARN')],
+    [sg.Text("End: ", size=(12, 1)), sg.Input(key="MUSIC_CROP_END", enable_events=True),
+     sg.Text("", key='CROP_END_WARN')],
     [
     sg.vbottom(sg.Text("Speed")),
     sg.Slider((0.05,2), 1, 0.025, orientation='horizontal', key="SPEED_SLIDER", enable_events = True),
@@ -121,13 +168,16 @@ try:
         elif event == "IMAGE_SAVE":
             export(values["IMAGE_SAVE"])
         elif event == "MUSIC_PATH":
-            enable_play(load_audio(values["MUSIC_PATH"]))
+            valid_audio = load_audio(values["MUSIC_PATH"])
+            calc_seconds(values["MUSIC_CROP_START"], False)
+            calc_seconds(values["MUSIC_CROP_END"], True)
         elif event == "PITCH_BOX":
             set_pitch(values["PITCH_BOX"])
         elif event == "SPEED_SLIDER":
             set_speed(values["SPEED_SLIDER"])
         elif event == "MUSIC_PLAY":
             play_audio()
+            window["MUSIC_PAUSE"].update(disabled=False)
             window['MUSIC_STATUS'].update('Playing')
         elif event == "MUSIC_PAUSE":
             if stop_audio():
@@ -136,7 +186,12 @@ try:
                 window['MUSIC_STATUS'].update('Paused')
         elif event == "MUSIC_SAVE":
             export_audio(values["MUSIC_SAVE"])
-except:
+        elif event == "MUSIC_CROP_START":
+            calc_seconds(values["MUSIC_CROP_START"], False)
+        elif event == "MUSIC_CROP_END":
+            calc_seconds(values["MUSIC_CROP_END"], True)
+except Exception as exception:
+    print(type(exception).__name__)
     cleanup_audio()
 
 window.close()
