@@ -3,6 +3,7 @@ import pygame
 import librosa
 import os
 import soundfile as sf
+import datetime
 
 
 speed = 1.0
@@ -15,6 +16,27 @@ sr = 0
 start_crop = -1
 end_crop = -1
 max_seconds = 0
+length = 0
+predicted_length = 0
+
+def predict_length():
+    global predicted_length
+    secs = max_seconds
+    if start_crop != -1:
+        secs -= start_crop
+    if end_crop != -1:
+        secs -= (max_seconds-end_crop)
+    predicted_length = secs / speed
+    return datetime.datetime.fromtimestamp(predicted_length).strftime("%H:%M:%S.%f")
+
+def set_length(seconds):
+    global length, predicted_length
+    print(seconds)
+    print(predicted_length)
+    if seconds != -1 and seconds <= predicted_length:
+        return "Must be longer"
+    length = seconds
+    return ""
 
 def set_limit(seconds, isend):
     global start_crop
@@ -66,17 +88,12 @@ def load_audio(path):
     return True
 
 def crop_audio(series, sr):
-    #print(start_crop)
-    #print(end_crop)
     cut_at_start = 0
     if start_crop != -1:
         cut_at_start = sr * start_crop
     cut_at_end = len(series)
     if end_crop != -1:
         cut_at_end = sr*end_crop
-    #print(cut_at_start)
-    #print(cut_at_end)
-    #print(len(series))
 
     return series[cut_at_start : cut_at_end]
 
@@ -95,6 +112,8 @@ def update_audio():
         mod_series = librosa.effects.time_stretch(mod_series, rate=speed)
     else:
         mod_sr = int(sr*speed)
+
+    #LOOP HERE
 
     return mod_series, mod_sr
 
