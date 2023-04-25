@@ -4,6 +4,7 @@ import librosa
 import os
 import soundfile as sf
 import datetime
+import numpy as np
 
 
 speed = 1.0
@@ -16,7 +17,7 @@ sr = 0
 start_crop = -1
 end_crop = -1
 max_seconds = 0
-length = 0
+length = -1
 predicted_length = 0
 
 def predict_length():
@@ -30,12 +31,13 @@ def predict_length():
     return datetime.datetime.fromtimestamp(predicted_length).strftime("%H:%M:%S.%f")
 
 def set_length(seconds):
-    global length, predicted_length
+    global length, predicted_length, updated
     print(seconds)
     print(predicted_length)
     if seconds != -1 and seconds <= predicted_length:
         return "Must be longer"
     length = seconds
+    updated = False
     return ""
 
 def set_limit(seconds, isend):
@@ -95,7 +97,7 @@ def crop_audio(series, sr):
     if end_crop != -1:
         cut_at_end = sr*end_crop
 
-    return series[cut_at_start : cut_at_end]
+    return series[int(cut_at_start) : int(cut_at_end)]
 
 
     
@@ -113,7 +115,8 @@ def update_audio():
     else:
         mod_sr = int(sr*speed)
 
-    #LOOP HERE
+    if length != -1:
+        mod_series = np.resize(mod_series, int(sr*length))
 
     return mod_series, mod_sr
 
