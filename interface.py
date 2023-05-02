@@ -2,6 +2,7 @@ import PySimpleGUI as sg
 import os
 from chroma import import_foreground, import_background, set_thres, set_channel, cutout_show, export
 from audio import setup_mixer, set_pitch, set_speed, play_audio, stop_audio, export_audio, load_audio, cleanup_audio, set_limit, set_length, predict_length
+from PIL import Image
 
 working_directory = os.getcwd()
 
@@ -9,6 +10,8 @@ valid_audio = False
 valid_start = True
 valid_end = True
 valid_length = True
+video_file_list = []
+video_file_selected = -1
 
 def update_img_preview():
     bytes = cutout_show()
@@ -75,6 +78,60 @@ def calc_seconds(str, pos):
 def update_length_pred():
     window['LENGTH_PRED'].update("Expected length: " + str(predict_length()))
 
+def update_list_buttons():
+    global video_file_selected
+    window["LIST_UP"].update(visible = False)
+    window["LIST_DOWN"].update(visible = False)
+    window["LIST_REMOVE"].update(visible = False)
+    try:
+        video_file_selected = window.Element('video_listbox').Widget.curselection()[0]
+    except IndexError:
+        return
+    window["LIST_REMOVE"].update(visible = True)
+    if len(video_file_list) > 1:
+        window["LIST_UP"].update(visible = True)
+        window["LIST_DOWN"].update(visible = True)
+
+def remove_file(pos):
+    global video_file_selected
+    video_file_list.pop(pos)
+    window['video_listbox'].update(values = video_file_list)
+    if video_file_selected >= len(video_file_list):
+        video_file_selected = len(video_file_list)-1
+    window['video_listbox'].update(set_to_index=[video_file_selected])
+    update_list_buttons()
+
+def move_file(dir):
+    global video_file_selected
+    new_pos = video_file_selected + dir
+    if new_pos < 0:
+        new_pos = len(video_file_list)-1
+    if new_pos >= len(video_file_list):
+        new_pos = 0
+    val = video_file_list.pop(video_file_selected)
+    video_file_list.insert(new_pos, val)
+    window['video_listbox'].update(values = video_file_list)
+    window['video_listbox'].update(set_to_index=[new_pos])
+    video_file_selected = new_pos
+    update_list_buttons()
+
+def load_folder(directory):
+    for filename in os.listdir(directory):
+        f = os.path.join(directory, filename)
+        # checking if it is a file
+        if os.path.isfile(f) and is_jpg(f):
+            video_file_list.append(f)
+
+    window['video_listbox'].update(values = video_file_list)
+    update_list_buttons()
+
+def is_jpg(filename):
+    try:
+        i=Image.open(filename)
+        return i.format =='JPEG'
+    except IOError:
+        return False
+
 
 def background_layout():
     return  [[sg.Text("Choose a background file:")],
@@ -140,9 +197,27 @@ tab2 = [
     ]
 ]
 
+tab3 = [[
+    sg.Column(
+    [[sg.Text("Add image:")],
+    [sg.Listbox(values=video_file_list, key="video_listbox", size=(50, 10), enable_events=True),
+    sg.Column([[sg.InputText(key="-FILE_PATH_VID-", enable_events=True, visible=False),
+    sg.FileBrowse(initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")]),
+    ],
+    [sg.InputText(key="-FOLDER_PATH_VID-", enable_events=True, visible=False),
+    sg.FolderBrowse("Load Folder", initial_folder=working_directory),
+    ],
+    [sg.Button("Remove", key="LIST_REMOVE", visible=False)],
+    [sg.Button("Move Up", key="LIST_UP", visible=False)],
+    [sg.Button("Move Down", key="LIST_DOWN", visible=False)],
+    ])
+    ]])
+]]
+
 layout = [[sg.TabGroup([
    [sg.Tab('Chroma Key', tab1),
-   sg.Tab('Audio Edit', tab2)]])],
+   sg.Tab('Audio Edit', tab2),
+   sg.Tab('Picture Album Video', tab3)]])],
 ]
 
 window = sg.Window("Multimedia App", layout)
@@ -208,6 +283,20 @@ while True:
         calc_seconds(values["MUSIC_CROP_END"], "end")
     elif event == "MUSIC_LENGTH":
         calc_seconds(values["MUSIC_LENGTH"], "length")
+    elif event == "-FILE_PATH_VID-":
+        video_file_list.append(values['-FILE_PATH_VID-'])
+        window['video_listbox'].update(values = video_file_list)
+        update_list_buttons()
+    elif event == "-FOLDER_PATH_VID-":
+        load_folder(values["-FOLDER_PATH_VID-"])
+    elif event == "video_listbox":
+        update_list_buttons()
+    elif event == "LIST_REMOVE":
+        remove_file(video_file_selected)
+    elif event == "LIST_UP":
+        move_file(-1)
+    elif event == "LIST_DOWN":
+        move_file(1)
 
 window.close()
 cleanup_audio()
