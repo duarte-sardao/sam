@@ -70,10 +70,12 @@ def calc_seconds(str, pos):
     else:
         message = set_limit(secs, pos=="end")
     cuts_info(pos, message)
-    update_length_pred()
+    if pos != "length":
+        update_length_pred()
 
 def update_length_pred():
     window['LENGTH_PRED'].update("Expected length: " + str(predict_length()))
+    calc_seconds(values["MUSIC_LENGTH"], "length")
 
 
 def background_layout():
@@ -208,6 +210,7 @@ while True:
         calc_seconds(values["MUSIC_CROP_END"], "end")
     elif event == "MUSIC_LENGTH":
         calc_seconds(values["MUSIC_LENGTH"], "length")
+
 
 window.close()
 cleanup_audio()
