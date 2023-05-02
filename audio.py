@@ -28,7 +28,10 @@ def predict_length():
     if end_crop != -1:
         secs -= (max_seconds-end_crop)
     predicted_length = secs / speed
-    return datetime.datetime.fromtimestamp(predicted_length).strftime("%H:%M:%S.%f")
+    timestamp = datetime.datetime(1970, 1, 1) + datetime.timedelta(seconds=predicted_length)
+    output_string = timestamp.strftime("%H:%M:%S.%f")[:-4]
+    print(output_string)
+    return output_string
 
 def set_length(seconds):
     global length, predicted_length, updated

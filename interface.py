@@ -73,10 +73,12 @@ def calc_seconds(str, pos):
     else:
         message = set_limit(secs, pos=="end")
     cuts_info(pos, message)
-    update_length_pred()
+    if pos != "length":
+        update_length_pred()
 
 def update_length_pred():
     window['LENGTH_PRED'].update("Expected length: " + str(predict_length()))
+    calc_seconds(values["MUSIC_LENGTH"], "length")
 
 def update_list_buttons():
     global video_file_selected
@@ -297,6 +299,7 @@ while True:
         move_file(-1)
     elif event == "LIST_DOWN":
         move_file(1)
+
 
 window.close()
 cleanup_audio()
