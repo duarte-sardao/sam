@@ -2,6 +2,7 @@ import PySimpleGUI as sg
 import os
 from chroma import import_foreground, import_background, set_thres, set_channel, cutout_show, export
 from audio import setup_mixer, set_pitch, set_speed, play_audio, stop_audio, export_audio, load_audio, cleanup_audio, set_limit, set_length, predict_length
+from video import load_vid_audio, set_transition_length, get_len
 from PIL import Image
 
 working_directory = os.getcwd()
@@ -12,6 +13,7 @@ valid_end = True
 valid_length = True
 video_file_list = []
 video_file_selected = -1
+valid_vid_audio = False
 
 def update_img_preview():
     bytes = cutout_show()
@@ -133,6 +135,16 @@ def is_jpg(filename):
         return i.format =='JPEG'
     except IOError:
         return False
+    
+def video_lens():
+    if not valid_vid_audio or len(video_file_list) < 1:
+        window['CLIP_LEN'].update("N/A")
+        window['TRAN_LEN'].update("N/A")
+        return
+    lent = get_len() / len(video_file_list)
+    window['CLIP_LEN'].update(lent)
+    window['TRAN_LEN'].update(lent * values["TRANSITION_LENGTH"] / 100)
+
 
 
 def background_layout():
@@ -213,7 +225,13 @@ tab3 = [[
     [sg.Button("Move Up", key="LIST_UP", visible=False)],
     [sg.Button("Move Down", key="LIST_DOWN", visible=False)],
     ])
-    ]])
+    ]]),
+    sg.Column(
+    [[sg.Text("Choose audio: ", size=(12,1)), sg.Input(key="VIDEO_MUS_PATH", enable_events=True),
+    sg.FileBrowse(initial_folder=working_directory, file_types=[("Audio Files", "*.mp3 *.wav")])],
+    [sg.vbottom(sg.Text("Transition length (%): ")),sg.Slider((0,100), 50, 0.25, orientation='horizontal', key="TRANSITION_LENGTH", enable_events = True)],
+    [sg.Text("Clip length: "), sg.Text("N/A", key="CLIP_LEN"), sg.Text("Transition length: "), sg.Text("N/A", key="TRAN_LEN")]
+    ])
 ]]
 
 layout = [[sg.TabGroup([
@@ -289,16 +307,26 @@ while True:
         video_file_list.append(values['-FILE_PATH_VID-'])
         window['video_listbox'].update(values = video_file_list)
         update_list_buttons()
+        video_lens()
     elif event == "-FOLDER_PATH_VID-":
         load_folder(values["-FOLDER_PATH_VID-"])
+        video_lens()
     elif event == "video_listbox":
         update_list_buttons()
     elif event == "LIST_REMOVE":
         remove_file(video_file_selected)
+        video_lens()
     elif event == "LIST_UP":
         move_file(-1)
     elif event == "LIST_DOWN":
         move_file(1)
+    elif event == "VIDEO_MUS_PATH":
+        valid_vid_audio = load_vid_audio(values["VIDEO_MUS_PATH"])
+        video_lens()
+    elif event == "TRANSITION_LENGTH":
+        set_transition_length(values["TRANSITION_LENGTH"])
+        video_lens()
+        
 
 
 window.close()
