@@ -16,6 +16,8 @@ video_file_list = []
 video_file_selected = -1
 valid_vid_audio = False
 
+sg.theme('DarkGreen6')
+
 
     
 class MyBarLogger(ProgressBarLogger):
@@ -25,7 +27,6 @@ class MyBarLogger(ProgressBarLogger):
         # the `changes` dictionary of the form `parameter: new value`.
         for (parameter, value) in changes.items():
             print ('Parameter %s is now %s' % (parameter, value))
-            #value = value[:value.index("C:") + len("C:")]
             write = ""
             if value.find('Writing audio') != -1:
                 write = "Writing Audio"
@@ -40,7 +41,7 @@ class MyBarLogger(ProgressBarLogger):
         global percentage
         # Every time the logger progress is updated, this function is called        
         percentage = (value / self.bars[bar]['total']) * 100
-        print(bar,attr,percentage)
+        #print(bar,attr,percentage)
         if percentage >= 100:
             window["PBAR"].update(visible=False)
         else:
@@ -179,8 +180,9 @@ def video_lens():
         return
     lent = get_len() / len(video_file_list)
     tlent = lent * values["TRANSITION_LENGTH"] / 100
-    window['CLIP_LEN'].update(lent)
-    window['TRAN_LEN'].update(tlent)
+
+    window['CLIP_LEN'].update(str(round(lent,2)) + " s")
+    window['TRAN_LEN'].update(str(round(tlent,2)) + " s")
     set_clip_length(lent)
     set_transition_length(tlent)
     window['EXPORT_VIDEO'].update(disabled=False)
@@ -252,7 +254,7 @@ tab2 = [
     ]
 ]
 
-resolutions = ["640x360", "1280x720", "1920x1080", "320x240", "640x480", "1280x960"]
+resolutions = ["320x240","640x360", "640x480", "1280x720",  "1280x960", "1920x1080"]
 
 tab3 = [[
     sg.Column(
