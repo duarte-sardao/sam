@@ -2,8 +2,9 @@ import PySimpleGUI as sg
 import os
 from chroma import import_foreground, import_background, set_thres, set_channel, cutout_show, export
 from audio import setup_mixer, set_pitch, set_speed, play_audio, stop_audio, export_audio, load_audio, cleanup_audio, set_limit, set_length, predict_length
-from video import load_vid_audio, set_transition_length, get_len
+from video import load_vid_audio, set_transition_length, get_len, create_video, set_clip_length, set_res
 from PIL import Image
+from proglog import ProgressBarLogger
 
 working_directory = os.getcwd()
 
@@ -14,6 +15,40 @@ valid_length = True
 video_file_list = []
 video_file_selected = -1
 valid_vid_audio = False
+
+
+    
+class MyBarLogger(ProgressBarLogger):
+    
+    def callback(self, **changes):
+        # Every time the logger message is updated, this function is called with
+        # the `changes` dictionary of the form `parameter: new value`.
+        for (parameter, value) in changes.items():
+            print ('Parameter %s is now %s' % (parameter, value))
+            #value = value[:value.index("C:") + len("C:")]
+            write = ""
+            if value.find('Writing audio') != -1:
+                write = "Writing Audio"
+            elif value.find('Writing video') != -1:
+                write = "Writing Video"
+            elif value.find('video ready') != -1:
+                write = "Video Ready!"
+
+            window["PROGRESS_STATUS"].update(write)
+    
+    def bars_callback(self, bar, attr, value,old_value=None):
+        global percentage
+        # Every time the logger progress is updated, this function is called        
+        percentage = (value / self.bars[bar]['total']) * 100
+        print(bar,attr,percentage)
+        if percentage >= 100:
+            window["PBAR"].update(visible=False)
+        else:
+            window["PBAR"].update(visible=True)
+            window["PBAR"].update(percentage)
+
+
+logger = MyBarLogger()
 
 def update_img_preview():
     bytes = cutout_show()
@@ -140,10 +175,15 @@ def video_lens():
     if not valid_vid_audio or len(video_file_list) < 1:
         window['CLIP_LEN'].update("N/A")
         window['TRAN_LEN'].update("N/A")
+        window['EXPORT_VIDEO'].update(disabled=True)
         return
     lent = get_len() / len(video_file_list)
+    tlent = lent * values["TRANSITION_LENGTH"] / 100
     window['CLIP_LEN'].update(lent)
-    window['TRAN_LEN'].update(lent * values["TRANSITION_LENGTH"] / 100)
+    window['TRAN_LEN'].update(tlent)
+    set_clip_length(lent)
+    set_transition_length(tlent)
+    window['EXPORT_VIDEO'].update(disabled=False)
 
 
 
@@ -163,6 +203,7 @@ def chroma_options_layout():
         [sg.Radio('B', "RADIOCHANNEL", key="RADIOCHANNEL", default=False, enable_events=True)],
     ])
 ]]
+
 
 tab1 = [[  sg.Column(
             [[sg.Text("Choose a foreground file:")],
@@ -211,10 +252,12 @@ tab2 = [
     ]
 ]
 
+resolutions = ["640x360", "1280x720", "1920x1080", "320x240", "640x480", "1280x960"]
+
 tab3 = [[
     sg.Column(
     [[sg.Text("Add image:")],
-    [sg.Listbox(values=video_file_list, key="video_listbox", size=(50, 10), enable_events=True),
+    [sg.Listbox(values=video_file_list, key="video_listbox", size=(50, 20), enable_events=True),
     sg.Column([[sg.InputText(key="-FILE_PATH_VID-", enable_events=True, visible=False),
     sg.FileBrowse(initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")]),
     ],
@@ -230,7 +273,12 @@ tab3 = [[
     [[sg.Text("Choose audio: ", size=(12,1)), sg.Input(key="VIDEO_MUS_PATH", enable_events=True),
     sg.FileBrowse(initial_folder=working_directory, file_types=[("Audio Files", "*.mp3 *.wav")])],
     [sg.vbottom(sg.Text("Transition length (%): ")),sg.Slider((0,100), 50, 0.25, orientation='horizontal', key="TRANSITION_LENGTH", enable_events = True)],
-    [sg.Text("Clip length: "), sg.Text("N/A", key="CLIP_LEN"), sg.Text("Transition length: "), sg.Text("N/A", key="TRAN_LEN")]
+    [sg.Text("Clip length: "), sg.Text("N/A", key="CLIP_LEN"), sg.Text("Transition length: "), sg.Text("N/A", key="TRAN_LEN")],
+    [sg.Combo(resolutions, enable_events=True, key="RESOLUTION", default_value='1280x720'),
+     sg.InputText(key="CREATE_VIDEO", do_not_clear=False, visible=False, enable_events=True), 
+     sg.FileSaveAs("Export",initial_folder=working_directory, file_types=[("MP4 Files", "*.mp4")], key = "EXPORT_VIDEO", enable_events = True, disabled=True)],
+    [sg.Text("", key="PROGRESS_STATUS")],
+    [sg.ProgressBar(100, orientation='h', expand_x=True, size=(20, 20),  key='PBAR', visible=False)]
     ])
 ]]
 
@@ -324,8 +372,11 @@ while True:
         valid_vid_audio = load_vid_audio(values["VIDEO_MUS_PATH"])
         video_lens()
     elif event == "TRANSITION_LENGTH":
-        set_transition_length(values["TRANSITION_LENGTH"])
         video_lens()
+    elif event == "CREATE_VIDEO":
+        create_video(video_file_list, values["CREATE_VIDEO"], logger)
+    elif event == "RESOLUTION":
+        set_res(values["RESOLUTION"])
         
 
 
