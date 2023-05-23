@@ -18,6 +18,12 @@ video_file_selected = -1
 valid_vid_audio = False
 update_thres = False
 
+#disabled_button_text = sg.theme_background_color()
+#disabled_button_color = sg.theme_button_color_text() #yes
+
+disabled_button_color = (sg.theme_button_color_text(), sg.theme_background_color())
+disabled_text_color = "grey70"
+
 sg.theme('BlueMono')
 
 
@@ -53,17 +59,28 @@ class MyBarLogger(ProgressBarLogger):
 
 logger = MyBarLogger()
 
+def set_button(butt_name, disable):
+    window[butt_name].update(disabled=disable)
+    if disable:
+        window[butt_name].update(button_color=disabled_button_color)
+        window[butt_name].Widget.configure(disabledforeground=disabled_text_color)
+    else:
+        window[butt_name].update(button_color=sg.theme_button_color())
+
 def update_img_preview():
     bytes = cutout_show(window['preview_image'].Size)
     if bytes != None:
         window['preview_image'].update(data=bytes)
-        window['EXPORT'].update(disabled=False)
+        #window['EXPORT'].update(disabled=False)
+        set_button('EXPORT', False)
 
 def enable_play():
     global valid_audio, valid_start, valid_end, valid_length
     isvalid = valid_audio and valid_start and valid_end and valid_length
-    window["MUSIC_PLAY"].update(disabled=not isvalid)
-    window["MUSIC_EXPORT"].update(disabled=not isvalid)
+    #window["MUSIC_PLAY"].update(disabled=not isvalid)
+    #window["MUSIC_EXPORT"].update(disabled=not isvalid)
+    set_button('MUSIC_PLAY', not isvalid)
+    set_button('MUSIC_EXPORT', not isvalid)
 
 def cuts_info(pos, msg):
     global valid_start
@@ -181,7 +198,8 @@ def video_lens():
     if not valid_vid_audio or len(video_file_list) < 1:
         window['CLIP_LEN'].update("N/A")
         window['TRAN_LEN'].update("N/A")
-        window['EXPORT_VIDEO'].update(disabled=True)
+        #window['EXPORT_VIDEO'].update(disabled=True)
+        set_button('EXPORT_VIDEO', True)
         return
     lent = get_len() / len(video_file_list)
     tlent = lent * values["TRANSITION_LENGTH"] / 100
@@ -190,7 +208,8 @@ def video_lens():
     window['TRAN_LEN'].update(str(round(tlent,2)) + " s")
     set_clip_length(lent)
     set_transition_length(tlent)
-    window['EXPORT_VIDEO'].update(disabled=False)
+    #window['EXPORT_VIDEO'].update(disabled=False)
+    set_button('EXPORT_VIDEO', False)
 
 
 
@@ -229,7 +248,7 @@ tab1 = [[  sg.Column(
             ]),
             sg.Column([[sg.Text("Threshold")],[sg.Slider((0,256), 128, 1, orientation='horizontal', key="THR_SLIDER", enable_events = True)]], vertical_alignment='t'),
             sg.InputText(key="IMAGE_SAVE", do_not_clear=False, visible=False, enable_events=True), 
-            sg.FileSaveAs("Export",initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")], key = "EXPORT", enable_events = True, disabled=True)
+            sg.FileSaveAs("Export",initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")], key = "EXPORT", enable_events = True, disabled=True,button_color=disabled_button_color)
             ],
             ],
             key="CHROMA"),
@@ -252,10 +271,10 @@ tab2 = [
     [sg.Text("Loop to length: ", size=(12, 1)), sg.Input(key="MUSIC_LENGTH", enable_events=True), sg.Text("", key="LENGTH_WARN")],
     [sg.Text(size=(12,1), key='MUSIC_STATUS')],
     [
-        sg.Button('Play', pad=(10, 0), key='MUSIC_PLAY', disabled=True),
-        sg.Button('Pause', pad=(10, 0), key='MUSIC_PAUSE',disabled=True),
+        sg.Button('Play', pad=(10, 0), key='MUSIC_PLAY', disabled=True, button_color=disabled_button_color),
+        sg.Button('Pause', pad=(10, 0), key='MUSIC_PAUSE',disabled=True, button_color=disabled_button_color),
         sg.InputText(key="MUSIC_SAVE", do_not_clear=False, visible=False, enable_events=True),
-        sg.FileSaveAs("Export",initial_folder=working_directory, file_types=[("WAV", "*.wav")], key = "MUSIC_EXPORT", enable_events = True, disabled=True)
+        sg.FileSaveAs("Export",initial_folder=working_directory, file_types=[("WAV", "*.wav")], key = "MUSIC_EXPORT", enable_events = True, disabled=True, button_color=disabled_button_color)
     ]
 ]
 
@@ -283,7 +302,7 @@ tab3 = [[
     [sg.Text("Clip length: "), sg.Text("N/A", key="CLIP_LEN"), sg.Text("Transition length: "), sg.Text("N/A", key="TRAN_LEN")],
     [sg.Combo(resolutions, enable_events=True, key="RESOLUTION", default_value='1280x720'),
      sg.InputText(key="CREATE_VIDEO", do_not_clear=False, visible=False, enable_events=True), 
-     sg.FileSaveAs("Export",initial_folder=working_directory, file_types=[("MP4 Files", "*.mp4")], key = "EXPORT_VIDEO", enable_events = True, disabled=True)],
+     sg.FileSaveAs("Export",initial_folder=working_directory, file_types=[("MP4 Files", "*.mp4")], key = "EXPORT_VIDEO", enable_events = True, disabled=True, button_color=disabled_button_color)],
     [sg.Text("", key="PROGRESS_STATUS")],
     [sg.ProgressBar(100, orientation='h', expand_x=True, size=(20, 20),  key='PBAR', visible=False)],
     [sg.Image(key='LIST_IMAGE',size=(400,250))]
@@ -296,14 +315,19 @@ layout = [[sg.TabGroup([
    sg.Tab('Picture Album Video', tab3)]])],
 ]
 
-window = sg.Window("Multimedia App", layout)
+window = sg.Window("Multimedia App", layout, finalize=True)
 
 setup_mixer()
+set_button('EXPORT',True)
+set_button('MUSIC_PLAY',True)
+set_button('MUSIC_PAUSE',True)
+set_button('MUSIC_EXPORT',True)
+set_button('EXPORT_VIDEO',True)
 
 while True:
     event, values = window.read(timeout=500)
 
-    print(event)
+    #print(event)
 
 
 
@@ -344,7 +368,8 @@ while True:
         update_length_pred()
     elif event == "MUSIC_PLAY":
         play_audio()
-        window["MUSIC_PAUSE"].update(disabled=False)
+        #window["MUSIC_PAUSE"].update(disabled=False)
+        set_button("MUSIC_PAUSE", False)
         window['MUSIC_STATUS'].update('Playing')
     elif event == "MUSIC_PAUSE":
         if stop_audio():

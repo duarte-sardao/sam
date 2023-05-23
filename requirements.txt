@@ -1,0 +1,9 @@
+librosa==0.10.0.post2
+moviepy==1.0.3
+numpy==1.23.5
+opencv_python==4.7.0.72
+Pillow==9.5.0
+proglog==0.1.10
+pygame==2.3.0
+PySimpleGUI==4.60.5
+soundfile==0.12.1
