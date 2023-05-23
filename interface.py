@@ -2,9 +2,10 @@ import PySimpleGUI as sg
 import os
 from chroma import import_foreground, import_background, set_thres, set_channel, cutout_show, export
 from audio import setup_mixer, set_pitch, set_speed, play_audio, stop_audio, export_audio, load_audio, cleanup_audio, set_limit, set_length, predict_length
-from video import load_vid_audio, set_transition_length, get_len, create_video, set_clip_length, set_res
+from video import load_vid_audio, set_transition_length, get_len, create_video, set_clip_length, set_res, resize_image
 from PIL import Image
 from proglog import ProgressBarLogger
+import cv2
 
 working_directory = os.getcwd()
 
@@ -16,7 +17,7 @@ video_file_list = []
 video_file_selected = -1
 valid_vid_audio = False
 
-sg.theme('DarkGreen6')
+sg.theme('BlueMono')
 
 
     
@@ -52,7 +53,7 @@ class MyBarLogger(ProgressBarLogger):
 logger = MyBarLogger()
 
 def update_img_preview():
-    bytes = cutout_show()
+    bytes = cutout_show(window['preview_image'].Size)
     if bytes != None:
         window['preview_image'].update(data=bytes)
         window['EXPORT'].update(disabled=False)
@@ -123,8 +124,11 @@ def update_list_buttons():
     window["LIST_UP"].update(visible = False)
     window["LIST_DOWN"].update(visible = False)
     window["LIST_REMOVE"].update(visible = False)
+    window['LIST_IMAGE'].update(visible=False)
     try:
         video_file_selected = window.Element('video_listbox').Widget.curselection()[0]
+        bytes = cv2.imencode('.png', resize_image(cv2.imread(window['video_listbox'].Values[video_file_selected]), window['LIST_IMAGE'].Size))[1].tobytes()
+        window['LIST_IMAGE'].update(data=bytes, visible=True)
     except IndexError:
         return
     window["LIST_REMOVE"].update(visible = True)
@@ -280,7 +284,8 @@ tab3 = [[
      sg.InputText(key="CREATE_VIDEO", do_not_clear=False, visible=False, enable_events=True), 
      sg.FileSaveAs("Export",initial_folder=working_directory, file_types=[("MP4 Files", "*.mp4")], key = "EXPORT_VIDEO", enable_events = True, disabled=True)],
     [sg.Text("", key="PROGRESS_STATUS")],
-    [sg.ProgressBar(100, orientation='h', expand_x=True, size=(20, 20),  key='PBAR', visible=False)]
+    [sg.ProgressBar(100, orientation='h', expand_x=True, size=(20, 20),  key='PBAR', visible=False)],
+    [sg.Image(key='LIST_IMAGE',size=(400,250))]
     ])
 ]]
 
