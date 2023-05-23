@@ -16,6 +16,7 @@ valid_length = True
 video_file_list = []
 video_file_selected = -1
 valid_vid_audio = False
+update_thres = False
 
 sg.theme('BlueMono')
 
@@ -300,7 +301,7 @@ window = sg.Window("Multimedia App", layout)
 setup_mixer()
 
 while True:
-    event, values = window.read()
+    event, values = window.read(timeout=500)
 
     print(event)
 
@@ -329,7 +330,7 @@ while True:
         update_img_preview()
     elif event == "THR_SLIDER":
         set_thres(values["THR_SLIDER"])
-        update_img_preview()
+        update_thres = True
     elif event == "IMAGE_SAVE":
         export(values["IMAGE_SAVE"])
     elif event == "MUSIC_PATH":
@@ -384,6 +385,9 @@ while True:
         create_video(video_file_list, values["CREATE_VIDEO"], logger)
     elif event == "RESOLUTION":
         set_res(values["RESOLUTION"])
+    elif event == "__TIMEOUT__" and update_thres:
+        update_img_preview()
+        update_thres = False
         
 
 

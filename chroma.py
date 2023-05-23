@@ -56,12 +56,8 @@ def cutout_show(size):
             if channels[channel][x][y] < threshold:
                 result[x][y] = pixel
 
-    preview = resize_image(result, size)    
-    #preview = result        
-    #return cv2.imencode('.png', cv2.resize(result,(450,250)))[1].tobytes()
+    preview = resize_image(result, size)
     return cv2.imencode('.png', preview)[1].tobytes()
-    #cv2.imshow("Base", foreground)
-    #cv2.imshow("Back", background)
     
 def export(path):
     cv2.imwrite(path, result)
