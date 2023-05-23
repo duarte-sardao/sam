@@ -96,6 +96,14 @@ def cuts_info(pos, msg):
         valid_length = msg == ""
         window['LENGTH_WARN'].update(msg)
     enable_play()
+
+def reset_audio():
+    set_button('MUSIC_PLAY',True)
+    set_button('MUSIC_PAUSE',True)
+    set_button('MUSIC_EXPORT',True)
+    window['MUSIC_STATUS'].update('')
+    if window['MUSIC_STATUS'].get() == 'Playing':
+        stop_audio()
     
 
 def calc_seconds(str, pos):
@@ -359,6 +367,7 @@ while True:
         export(values["IMAGE_SAVE"])
     elif event == "MUSIC_PATH":
         valid_audio = load_audio(values["MUSIC_PATH"])
+        reset_audio()
         calc_seconds(values["MUSIC_CROP_START"], "start")
         calc_seconds(values["MUSIC_CROP_END"], "end")
     elif event == "PITCH_BOX":
