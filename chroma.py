@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from video import resize_image
+import threading
 
 channels = 0
 background = []
@@ -8,6 +9,8 @@ foreground = []
 result = 0
 threshold = 0
 channel = 0
+cutout_thread = None
+preview = None
 
 def set_thres(thres):
     global threshold
@@ -40,9 +43,18 @@ def import_background(img):
     except:
         return
     #background = cv2.resize(background, (foreground.shape[1], foreground.shape[0]))
-    
+
 def cutout_show(size):
+    global cutout_thread
+    #if cutout_thread != None:
+        #cutout_thread.terminate()
+    
+    cutout_thread = threading.Thread(target=cutout_show_thread, args=(size,))
+    cutout_thread.start()
+    
+def cutout_show_thread(size):
     global result
+    global preview
     global background
     global foreground
     global channel
@@ -59,9 +71,13 @@ def cutout_show(size):
     preview = resize_image(result, size)    
     #preview = result        
     #return cv2.imencode('.png', cv2.resize(result,(450,250)))[1].tobytes()
-    return cv2.imencode('.png', preview)[1].tobytes()
+    preview = cv2.imencode('.png', preview)[1].tobytes()
     #cv2.imshow("Base", foreground)
     #cv2.imshow("Back", background)
     
 def export(path):
+    cutout_thread.join()
     cv2.imwrite(path, result)
+
+def get_preview():
+    return preview

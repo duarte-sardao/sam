@@ -1,6 +1,6 @@
 import PySimpleGUI as sg
 import os
-from chroma import import_foreground, import_background, set_thres, set_channel, cutout_show, export
+from chroma import import_foreground, import_background, set_thres, set_channel, cutout_show, export, get_preview
 from audio import setup_mixer, set_pitch, set_speed, play_audio, stop_audio, export_audio, load_audio, cleanup_audio, set_limit, set_length, predict_length
 from video import load_vid_audio, set_transition_length, get_len, create_video, set_clip_length, set_res, resize_image
 from PIL import Image
@@ -53,9 +53,11 @@ class MyBarLogger(ProgressBarLogger):
 logger = MyBarLogger()
 
 def update_img_preview():
-    bytes = cutout_show(window['preview_image'].Size)
-    if bytes != None:
-        window['preview_image'].update(data=bytes)
+    cutout_show(window['preview_image'].Size)
+
+def set_preview():
+    if get_preview() != None:
+        window['preview_image'].update(data=get_preview())
         window['EXPORT'].update(disabled=False)
 
 def enable_play():
@@ -303,7 +305,8 @@ while True:
     event, values = window.read()
 
     print(event)
-
+    set_preview()
+    print(get_preview())
 
 
     if event in (sg.WIN_CLOSED, 'Exit'):
