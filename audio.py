@@ -140,6 +140,9 @@ def play_audio():
     mixer.music.play()
     is_playing = True
 
+def end_audio():
+    mixer.music.stop()
+
 def stop_audio():
     global is_playing
     if is_playing:

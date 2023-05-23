@@ -1,7 +1,7 @@
 import PySimpleGUI as sg
 import os
 from chroma import import_foreground, import_background, set_thres, set_channel, cutout_show, export
-from audio import setup_mixer, set_pitch, set_speed, play_audio, stop_audio, export_audio, load_audio, cleanup_audio, set_limit, set_length, predict_length
+from audio import setup_mixer, set_pitch, set_speed, play_audio, stop_audio, end_audio, export_audio, load_audio, cleanup_audio, set_limit, set_length, predict_length
 from video import load_vid_audio, set_transition_length, get_len, create_video, set_clip_length, set_res, resize_image
 from PIL import Image
 from proglog import ProgressBarLogger
@@ -102,8 +102,7 @@ def reset_audio():
     set_button('MUSIC_PAUSE',True)
     set_button('MUSIC_EXPORT',True)
     window['MUSIC_STATUS'].update('')
-    if window['MUSIC_STATUS'].get() == 'Playing':
-        stop_audio()
+    end_audio()
     
 
 def calc_seconds(str, pos):
