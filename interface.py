@@ -337,7 +337,7 @@ layout = [[sg.TabGroup([
    sg.Tab('Picture Album Video', tab3)]])],
 ]
 
-window = sg.Window("Multimedia App", layout, finalize=True)
+window = sg.Window("Multivision Editor", layout, finalize=True)
 
 setup_mixer()
 set_button('EXPORT',True)
