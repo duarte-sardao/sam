@@ -1,7 +1,14 @@
-butao cores (n possivel)
+In this prototype we extensively tested ourselves.
 
-gostou
+From external testers:
 
+Tester 1:
+Was slightly confused by disabled buttons, suggested changing their background colour (not just text colour as is default) -> Implemented
+Otherwise liked the application.
 
+Tester(s) 2:
+Had no problems using and enjoyed the application.
 
-
+Tester 3:
+Found a bug when trying to load images with spaces or accent marks -> cv2.imread problem so not fixable, but added warnings to the interface
+								      and stopped it from crashing

@@ -2,10 +2,12 @@ import PySimpleGUI as sg
 import os
 from chroma import import_foreground, import_background, set_thres, set_channel, cutout_show, export
 from audio import setup_mixer, set_pitch, set_speed, play_audio, stop_audio, end_audio, export_audio, load_audio, cleanup_audio, set_limit, set_length, predict_length
-from video import load_vid_audio, set_transition_length, get_len, create_video, set_clip_length, set_res, resize_image
+from video import load_vid_audio, set_transition_length, get_len, create_video, set_clip_length, set_res, resize_image, check_validity
 from PIL import Image
 from proglog import ProgressBarLogger
 import cv2
+import time
+import threading
 
 working_directory = os.getcwd()
 
@@ -185,14 +187,19 @@ def move_file(dir):
     update_list_buttons()
 
 def load_folder(directory):
+    good = True
     for filename in os.listdir(directory):
         f = os.path.join(directory, filename)
         # checking if it is a file
         if os.path.isfile(f) and is_jpg(f):
-            video_file_list.append(f)
+            if check_validity(f):
+                video_file_list.append(f)
+            else:
+                good = False
 
     window['video_listbox'].update(values = video_file_list)
     update_list_buttons()
+    return good
 
 def is_jpg(filename):
     try:
@@ -218,6 +225,10 @@ def video_lens():
     #window['EXPORT_VIDEO'].update(disabled=False)
     set_button('EXPORT_VIDEO', False)
 
+def fade_warning():
+    time.sleep(3)
+    window['VID_WARN'].update(visible=False)
+
 
 
 def background_layout():
@@ -231,29 +242,31 @@ def chroma_options_layout():
     return [[
         sg.Column([
         [sg.Text("Channel")],
-        [sg.Radio('R', "RADIOCHANNEL", key="RADIOCHANNEL", default=True, enable_events=True)],
-        [sg.Radio('G', "RADIOCHANNEL", key="RADIOCHANNEL", default=False, enable_events=True)],
-        [sg.Radio('B', "RADIOCHANNEL", key="RADIOCHANNEL", default=False, enable_events=True)],
+        [sg.Radio('Red', "RADIOCHANNEL", key="RADIOCHANNEL", default=True, enable_events=True)],
+        [sg.Radio('Green', "RADIOCHANNEL", key="RADIOCHANNEL", default=False, enable_events=True)],
+        [sg.Radio('Blue', "RADIOCHANNEL", key="RADIOCHANNEL", default=False, enable_events=True)],
     ])
 ]]
 
 
 tab1 = [[  sg.Column(
-            [[sg.Text("Choose a foreground file:")],
+            [[sg.Text("Choose a foreground image:")],
             [sg.InputText(key="-FILE_PATH_FG-", enable_events=True), 
             sg.FileBrowse(initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")])
             ],
-            [sg.Text("Choose a background file:")],
+            [sg.Text("Invalid named file", text_color="red", key="FG_WARN", visible=False)],
+            [sg.Text("Choose a background image:")],
             [sg.InputText(key="-FILE_PATH_BG-", enable_events=True), 
             sg.FileBrowse(initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")])
             ],
+            [sg.Text("Invalid named file", text_color="red", key="BG_WARN", visible=False)],
             [sg.Column([
-            [sg.Text("Channel")],
+            [sg.Text("Colour")],
             [sg.Radio('R', "RADIOCHANNEL", key="RADIOCHANNEL", default=True, enable_events=True)],
             [sg.Radio('G', "RADIOCHANNEL", key="RADIOCHANNEL", default=False, enable_events=True)],
             [sg.Radio('B', "RADIOCHANNEL", key="RADIOCHANNEL", default=False, enable_events=True)],
             ]),
-            sg.Column([[sg.Text("Threshold")],[sg.Slider((0,256), 128, 1, orientation='horizontal', key="THR_SLIDER", enable_events = True)]], vertical_alignment='t'),
+            sg.Column([[sg.Text("Tolerance (maximum strength of colour allowed)")],[sg.Slider((0,256), 128, 1, orientation='horizontal', key="THR_SLIDER", enable_events = True)]], vertical_alignment='t'),
             sg.InputText(key="IMAGE_SAVE", do_not_clear=False, visible=False, enable_events=True), 
             sg.FileSaveAs("Export",initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")], key = "EXPORT", enable_events = True, disabled=True,button_color=disabled_button_color)
             ],
@@ -265,9 +278,9 @@ tab1 = [[  sg.Column(
 tab2 = [
     [sg.Text("Choose a file: ", size=(12,1)), sg.Input(key="MUSIC_PATH", enable_events=True),
      sg.FileBrowse(initial_folder=working_directory, file_types=[("Audio Files", "*.mp3 *.wav")])],
-    [sg.Text("Start: ", size=(12, 1)), sg.Input(key="MUSIC_CROP_START", enable_events=True),
+    [sg.Text("Crop from: ", size=(12, 1)), sg.Input(key="MUSIC_CROP_START", enable_events=True),
      sg.Text("", key='CROP_START_WARN')],
-    [sg.Text("End: ", size=(12, 1)), sg.Input(key="MUSIC_CROP_END", enable_events=True),
+    [sg.Text("Crop to: ", size=(12, 1)), sg.Input(key="MUSIC_CROP_END", enable_events=True),
      sg.Text("", key='CROP_END_WARN')],
     [
     sg.vbottom(sg.Text("Speed")),
@@ -289,7 +302,7 @@ resolutions = ["320x240","640x360", "640x480", "1280x720",  "1280x960", "1920x10
 
 tab3 = [[
     sg.Column(
-    [[sg.Text("Add image:")],
+    [[sg.Text("Clip list:")],
     [sg.Listbox(values=video_file_list, key="video_listbox", size=(50, 20), enable_events=True),
     sg.Column([[sg.InputText(key="-FILE_PATH_VID-", enable_events=True, visible=False),
     sg.FileBrowse(initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")]),
@@ -301,7 +314,9 @@ tab3 = [[
     [sg.Button("Move Up", key="LIST_UP", visible=False)],
     [sg.Button("Move Down", key="LIST_DOWN", visible=False)],
     ])
-    ]]),
+    ],
+    [sg.Text("Invalid named file, not loaded", text_color="red", key="VID_WARN", visible=False)],
+    ]),
     sg.Column(
     [[sg.Text("Choose audio: ", size=(12,1)), sg.Input(key="VIDEO_MUS_PATH", enable_events=True),
     sg.FileBrowse(initial_folder=working_directory, file_types=[("Audio Files", "*.mp3 *.wav")])],
@@ -332,7 +347,7 @@ set_button('MUSIC_EXPORT',True)
 set_button('EXPORT_VIDEO',True)
 
 while True:
-    event, values = window.read(timeout=500)
+    event, values = window.read(timeout=100)
 
     #print(event)
 
@@ -342,13 +357,19 @@ while True:
         break
     elif event == "-FILE_PATH_FG-":
         fg_address = values["-FILE_PATH_FG-"]
-        import_foreground(fg_address)
-        update_img_preview()
+        if import_foreground(fg_address):
+            update_img_preview()
+            window['FG_WARN'].Update(visible=False)
+        else:
+            window['FG_WARN'].Update(visible=True)
         #window.extend_layout(window['CHROMA'], background_layout())
     elif event == "-FILE_PATH_BG-":
         bg_address = values["-FILE_PATH_BG-"]
-        import_background(bg_address)
-        update_img_preview()
+        if import_background(bg_address):
+            update_img_preview()
+            window['BG_WARN'].Update(visible=False)
+        else:
+            window['BG_WARN'].Update(visible=True)
         #window.extend_layout(window['CHROMA'], chroma_options_layout())
     elif event == "RADIOCHANNEL":
         set_channel(0)
@@ -393,12 +414,20 @@ while True:
     elif event == "MUSIC_LENGTH":
         calc_seconds(values["MUSIC_LENGTH"], "length")
     elif event == "-FILE_PATH_VID-":
-        video_file_list.append(values['-FILE_PATH_VID-'])
-        window['video_listbox'].update(values = video_file_list)
-        update_list_buttons()
-        video_lens()
+        if check_validity(values['-FILE_PATH_VID-']):
+            video_file_list.append(values['-FILE_PATH_VID-'])
+            window['video_listbox'].update(values = video_file_list)
+            update_list_buttons()
+            video_lens()
+        else:
+            window['VID_WARN'].update(visible=True)
+            thr = threading.Thread(target=fade_warning)
+            thr.start()
     elif event == "-FOLDER_PATH_VID-":
-        load_folder(values["-FOLDER_PATH_VID-"])
+        if not load_folder(values["-FOLDER_PATH_VID-"]):
+            window['VID_WARN'].update(visible=True)
+            thr = threading.Thread(target=fade_warning)
+            thr.start()
         video_lens()
     elif event == "video_listbox":
         update_list_buttons()

@@ -23,13 +23,15 @@ def import_foreground(img):
     try:
         foreground = cv2.imread(img)
     except:
-        return
+        return False
+    if foreground is None:
+        return False
     b, g, r = cv2.split(foreground)
     blueness = b.astype(np.float64) - np.maximum(r.astype(np.float64), g.astype(np.float64))
     redness = r.astype(np.float64) - np.maximum(b.astype(np.float64), g.astype(np.float64))
     greenness = g.astype(np.float64) - np.maximum(r.astype(np.float64), b.astype(np.float64))
     channels = [redness, greenness, blueness]
-
+    return True
     #cv2.imshow("test", foreground)
     
 def import_background(img):
@@ -38,7 +40,10 @@ def import_background(img):
     try:
         background = cv2.imread(img)
     except:
-        return
+        return False
+    if background is None:
+        return False
+    return True
     #background = cv2.resize(background, (foreground.shape[1], foreground.shape[0]))
     
 def cutout_show(size):
@@ -47,7 +52,7 @@ def cutout_show(size):
     global foreground
     global channel
     global channels
-    if len(background) == 0 or len(foreground) == 0:
+    if background is None or foreground is None or len(background) == 0 or len(foreground) == 0:
         return
     result = cv2.resize(background, (foreground.shape[1], foreground.shape[0]))
     

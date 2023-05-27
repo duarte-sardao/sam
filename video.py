@@ -23,6 +23,15 @@ seconds = 0
 hor = 1280
 ver = 720
 
+def check_validity(path):
+    try:
+        img = cv2.imread(path)
+    except:
+        return False
+    if img is None:
+        return False
+    return True
+
 def load_vid_audio(path):
     global sound_series
     global sr
