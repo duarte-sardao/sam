@@ -12,3 +12,7 @@ Had no problems using and enjoyed the application.
 Tester 3:
 Found a bug when trying to load images with spaces or accent marks -> cv2.imread problem so not fixable, but added warnings to the interface
 								      and stopped it from crashing
+
+
+Final testers:
+Less familiar with computer lingo (for example R,G,B)-> language clarified overall
