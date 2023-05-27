@@ -266,7 +266,7 @@ tab1 = [[  sg.Column(
             [sg.Radio('Green', "RADIOCHANNEL", key="RADIOCHANNEL", default=False, enable_events=True)],
             [sg.Radio('Blue', "RADIOCHANNEL", key="RADIOCHANNEL", default=False, enable_events=True)],
             ]),
-            sg.Column([[sg.Text("Tolerance (maximum strength of colour)")],[sg.Slider((0,256), 128, 1, orientation='horizontal', key="THR_SLIDER", enable_events = True)]], vertical_alignment='t'),
+            sg.Column([[sg.Text("Maximum strength of colour")],[sg.Slider((0,256), 128, 1, orientation='horizontal', key="THR_SLIDER", enable_events = True)]], vertical_alignment='t'),
             sg.InputText(key="IMAGE_SAVE", do_not_clear=False, visible=False, enable_events=True), 
             sg.FileSaveAs("Export",initial_folder=working_directory, file_types=[("JPG Files", "*.jpg")], key = "EXPORT", enable_events = True, disabled=True,button_color=disabled_button_color)
             ],
