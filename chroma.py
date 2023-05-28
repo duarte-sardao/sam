@@ -6,7 +6,7 @@ channels = 0
 background = []
 foreground = []
 result = 0
-threshold = 0
+threshold = 128
 channel = 0
 
 def set_thres(thres):
