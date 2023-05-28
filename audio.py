@@ -119,7 +119,7 @@ def update_audio():
         mod_sr = int(sr*speed)
 
     if length != -1:
-        mod_series = np.resize(mod_series, int(sr*length))
+        mod_series = np.resize(mod_series, int(mod_sr*length))
 
     return mod_series, mod_sr
 

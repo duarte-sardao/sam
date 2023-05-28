@@ -16,3 +16,5 @@ Found a bug when trying to load images with spaces or accent marks -> cv2.imread
 
 Final testers:
 Less familiar with computer lingo (for example R,G,B)-> language clarified overall
+
+music loop length
