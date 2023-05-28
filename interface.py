@@ -409,6 +409,7 @@ while True:
         export_audio(values["MUSIC_SAVE"])
     elif event == "MUSIC_CROP_START":
         calc_seconds(values["MUSIC_CROP_START"], "start")
+        calc_seconds(values["MUSIC_CROP_END"], "end")
     elif event == "MUSIC_CROP_END":
         calc_seconds(values["MUSIC_CROP_END"], "end")
     elif event == "MUSIC_LENGTH":
